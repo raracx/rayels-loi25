@@ -31,6 +31,6 @@ Quebec's Law 25 requires websites to get explicit cookie consent from users. The
 
 ## Links
 
-- [Full toolkit on GitHub](https://github.com/raracx/rayels-loi25-quebec)
+- [Full toolkit on GitHub](https://github.com/raracx/rayels-loi25)
 - [npm packages](https://www.npmjs.com/org/rayels)
 - [Rayels Consulting](https://rayelsconsulting.com)
