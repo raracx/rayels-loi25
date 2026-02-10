@@ -1,0 +1,27 @@
+{
+  "Loi 25 HTML Banner": {
+    "prefix": "loi25-html",
+    "body": [
+      "<!-- Loi 25 Quebec Cookie Consent Banner — by Rayels Consulting -->",
+      "<!-- https://rayelsconsulting.com -->",
+      "<script>",
+      "(function(){",
+      "  var S='loi25-consent';",
+      "  try{if(localStorage.getItem(S))return;}catch(e){return;}",
+      "  var l='${1|fr,en|}',t={",
+      "    fr:{t:'Respect de votre vie privée',m:'Ce site utilise des cookies. Conformément à la Loi 25 du Québec, nous demandons votre consentement.',y:'Tout accepter',n:'Nécessaires seulement',p:'Politique de confidentialité'},",
+      "    en:{t:'Your Privacy Matters',m:'This website uses cookies. In compliance with Quebec\\'s Law 25, we ask for your consent.',y:'Accept All',n:'Necessary Only',p:'Privacy Policy'}",
+      "  }[l]||t.fr;",
+      "  var d=document.createElement('div');",
+      "  d.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:999999;background:#fff;border-top:1px solid #e2e8f0;padding:20px 24px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;font-size:14px;color:#1e293b;box-shadow:0 -2px 20px rgba(0,0,0,.08)';",
+      "  d.innerHTML='<div style=\"max-width:960px;margin:0 auto\"><div style=\"font-weight:700;font-size:16px;margin-bottom:8px\">'+t.t+'</div><p style=\"margin:0 0 16px;color:#64748b;line-height:1.5\">'+t.m+'</p><div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center\"><button id=\"l25y\" style=\"background:#1d4ed8;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer\">'+t.y+'</button><button id=\"l25n\" style=\"background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer\">'+t.n+'</button><a href=\"${2:/politique-de-confidentialite}\" style=\"color:#64748b;font-size:12px;text-decoration:underline;margin-left:8px\">'+t.p+'</a></div></div>';",
+      "  document.body.appendChild(d);",
+      "  function a(v){try{localStorage.setItem(S,v);localStorage.setItem('loi25-consent-date',Date.now());}catch(e){}d.remove();}",
+      "  document.getElementById('l25y').onclick=function(){a('all');};",
+      "  document.getElementById('l25n').onclick=function(){a('necessary');};",
+      "})();",
+      "</script>"
+    ],
+    "description": "Loi 25 Quebec cookie consent banner (HTML script tag) — by Rayels Consulting"
+  }
+}

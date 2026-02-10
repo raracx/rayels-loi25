@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 360px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #1e293b; padding: 20px; }
+    h1 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+    .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; margin-bottom: 8px; }
+    .btn-primary { background: #1d4ed8; color: #fff; }
+    .btn-primary:hover { background: #1e40af; }
+    #results { margin-top: 16px; }
+    .check-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .check-item:last-child { border-bottom: none; }
+    .icon-pass { color: #16a34a; font-weight: 700; }
+    .icon-fail { color: #dc2626; font-weight: 700; }
+    .icon-warn { color: #f59e0b; font-weight: 700; }
+    .footer { margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; }
+    .footer a { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>Loi 25 Compliance Checker</h1>
+  <p class="subtitle">Check if this website complies with Quebec's Law 25</p>
+  <button class="btn btn-primary" id="check-btn">Scan This Page</button>
+
+  <div id="results"></div>
+
+  <div class="footer">
+    <a href="https://rayelsconsulting.com" target="_blank">Powered by Rayels Consulting</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

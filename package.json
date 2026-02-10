@@ -1,0 +1,11 @@
+{
+  "name": "rayels-loi25",
+  "private": true,
+  "description": "Monorepo for Loi 25 Quebec cookie consent solution by Rayels Consulting",
+  "author": {
+    "name": "Rayels Consulting",
+    "email": "contact@rayelsconsulting.com",
+    "url": "https://rayelsconsulting.com"
+  },
+  "license": "MIT"
+}

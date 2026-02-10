@@ -1,0 +1,35 @@
+{
+  "name": "@rayels/loi25",
+  "version": "1.0.0",
+  "description": "React component for Loi 25 Quebec cookie consent banner. Bilingual, lightweight, compliant. By Rayels Consulting.",
+  "main": "index.jsx",
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "react-dom": ">=17.0.0"
+  },
+  "keywords": [
+    "react",
+    "loi 25",
+    "loi25",
+    "quebec",
+    "cookie consent",
+    "privacy",
+    "cookie banner",
+    "gdpr",
+    "conformite",
+    "quebec privacy law",
+    "bill 64",
+    "react component"
+  ],
+  "author": {
+    "name": "Rayels Consulting",
+    "email": "contact@rayelsconsulting.com",
+    "url": "https://rayelsconsulting.com"
+  },
+  "homepage": "https://rayelsconsulting.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raracx/rayels-loi25-quebec"
+  },
+  "license": "MIT"
+}

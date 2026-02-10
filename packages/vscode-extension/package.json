@@ -1,0 +1,54 @@
+{
+  "name": "rayels-loi25-snippets",
+  "displayName": "Loi 25 Quebec Cookie Consent Snippets",
+  "description": "Code snippets for adding Loi 25 Quebec cookie consent to your website. React, HTML, Next.js, WordPress. By Rayels Consulting.",
+  "version": "1.0.0",
+  "publisher": "rayels-consulting",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Snippets"],
+  "keywords": [
+    "loi 25",
+    "quebec",
+    "cookie consent",
+    "privacy",
+    "gdpr",
+    "react",
+    "nextjs"
+  ],
+  "homepage": "https://rayelsconsulting.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raracx/rayels-loi25-quebec"
+  },
+  "author": {
+    "name": "Rayels Consulting",
+    "url": "https://rayelsconsulting.com"
+  },
+  "license": "MIT",
+  "contributes": {
+    "snippets": [
+      {
+        "language": "javascript",
+        "path": "./snippets/js.json"
+      },
+      {
+        "language": "javascriptreact",
+        "path": "./snippets/jsx.json"
+      },
+      {
+        "language": "typescriptreact",
+        "path": "./snippets/jsx.json"
+      },
+      {
+        "language": "html",
+        "path": "./snippets/html.json"
+      },
+      {
+        "language": "php",
+        "path": "./snippets/php.json"
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Loi 25 Quebec Cookie Consent Checker",
+  "version": "1.0.0",
+  "description": "Check if any website is compliant with Quebec's Loi 25 privacy law. Detect cookie banners, tracking scripts, and consent mechanisms. By Rayels Consulting.",
+  "permissions": ["activeTab", "scripting"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon48.png"
+  },
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "homepage_url": "https://rayelsconsulting.com",
+  "author": "Rayels Consulting"
+}

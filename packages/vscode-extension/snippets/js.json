@@ -1,0 +1,65 @@
+{
+  "Loi 25 Cookie Consent Banner": {
+    "prefix": "loi25-banner",
+    "body": [
+      "// Loi 25 Quebec Cookie Consent Banner",
+      "// https://rayelsconsulting.com",
+      "(function() {",
+      "  var STORAGE_KEY = 'loi25-consent';",
+      "  try { if (localStorage.getItem(STORAGE_KEY)) return; } catch(e) { return; }",
+      "",
+      "  var lang = '${1|fr,en|}';",
+      "  var texts = {",
+      "    fr: { title: 'Respect de votre vie privée', message: 'Ce site utilise des cookies. Conformément à la Loi 25 du Québec, nous demandons votre consentement.', acceptAll: 'Tout accepter', acceptNecessary: 'Nécessaires seulement', privacy: 'Politique de confidentialité' },",
+      "    en: { title: 'Your Privacy Matters', message: 'This website uses cookies. In compliance with Quebec\\'s Law 25, we ask for your consent.', acceptAll: 'Accept All', acceptNecessary: 'Necessary Only', privacy: 'Privacy Policy' }",
+      "  };",
+      "  var t = texts[lang];",
+      "",
+      "  var d = document.createElement('div');",
+      "  d.id = 'loi25-banner';",
+      "  d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999999;background:#fff;border-top:1px solid #e2e8f0;padding:20px 24px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;font-size:14px;color:#1e293b;box-shadow:0 -2px 20px rgba(0,0,0,.08)';",
+      "",
+      "  d.innerHTML = '<div style=\"max-width:960px;margin:0 auto\">'",
+      "    + '<div style=\"font-weight:700;font-size:16px;margin-bottom:8px\">' + t.title + '</div>'",
+      "    + '<p style=\"margin:0 0 16px;color:#64748b;line-height:1.5\">' + t.message + '</p>'",
+      "    + '<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center\">'",
+      "    + '<button id=\"loi25-yes\" style=\"background:#1d4ed8;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer\">' + t.acceptAll + '</button>'",
+      "    + '<button id=\"loi25-no\" style=\"background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer\">' + t.acceptNecessary + '</button>'",
+      "    + '<a href=\"${2:/politique-de-confidentialite}\" style=\"color:#64748b;font-size:12px;text-decoration:underline;margin-left:8px\">' + t.privacy + '</a>'",
+      "    + '</div></div>';",
+      "",
+      "  document.body.appendChild(d);",
+      "",
+      "  function accept(level) {",
+      "    try { localStorage.setItem(STORAGE_KEY, level); localStorage.setItem('loi25-consent-date', Date.now()); } catch(e) {}",
+      "    d.remove();",
+      "  }",
+      "  document.getElementById('loi25-yes').onclick = function() { accept('all'); };",
+      "  document.getElementById('loi25-no').onclick = function() { accept('necessary'); };",
+      "})();"
+    ],
+    "description": "Loi 25 Quebec cookie consent banner (vanilla JS) — by Rayels Consulting"
+  },
+  "Loi 25 Check Consent": {
+    "prefix": "loi25-check",
+    "body": [
+      "// Check Loi 25 consent before loading tracking",
+      "var consent = localStorage.getItem('loi25-consent');",
+      "if (consent === 'all') {",
+      "  // Load analytics / tracking scripts here",
+      "  ${0}",
+      "}"
+    ],
+    "description": "Check Loi 25 consent level before loading tracking scripts"
+  },
+  "Loi 25 Revoke Consent": {
+    "prefix": "loi25-revoke",
+    "body": [
+      "// Revoke Loi 25 cookie consent",
+      "localStorage.removeItem('loi25-consent');",
+      "localStorage.removeItem('loi25-consent-date');",
+      "location.reload();"
+    ],
+    "description": "Revoke Loi 25 cookie consent and reload page"
+  }
+}
