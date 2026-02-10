@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start \"\" \"C:\\\\Users\\\\rayel\\\\OneDrive\\\\Documents\\\\Business\\\\RayelsConsulting\\\\Business code projet 1\\\\rayels-loi25\\\\demo.html\")",
+      "Bash(ren:*)",
+      "Bash(powershell -Command:*)"
+    ]
+  }
+}

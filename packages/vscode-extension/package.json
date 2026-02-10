@@ -27,6 +27,7 @@
     "url": "https://rayelsconsulting.com"
   },
   "license": "MIT",
+  "icon": "icon.png",
   "contributes": {
     "snippets": [
       {

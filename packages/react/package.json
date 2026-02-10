@@ -2,7 +2,7 @@
   "name": "@rayels/loi25",
   "version": "1.0.0",
   "description": "React component for Loi 25 Quebec cookie consent banner. Bilingual, lightweight, compliant. By Rayels Consulting.",
-  "main": "index.jsx",
+  "main": "index.js",
   "peerDependencies": {
     "react": ">=17.0.0",
     "react-dom": ">=17.0.0"
