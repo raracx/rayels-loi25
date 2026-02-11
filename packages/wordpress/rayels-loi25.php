@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Loi 25 Quebec Cookie Consent — by Rayels Consulting
+ * Plugin Name: Loi 25 Quebec
  * Plugin URI: https://rayelsconsulting.com/tools/loi25-wordpress-plugin
  * Description: The most complete FREE Loi 25 (Bill 64) cookie consent solution for Quebec. 100% free — no premium version. Script blocking, Google Consent Mode v2, 3 banner styles, bilingual, zero dependencies.
  * Version: 2.0.0
@@ -9,8 +9,8 @@
  * License: MIT
  * Text Domain: rayels-loi25
  * Requires at least: 5.0
- * Tested up to: 6.7
- * Requires PHP: 7.2
+ * Tested up to: 6.9
+ * Requires PHP: 7.4
  */
 
 if (!defined('ABSPATH')) exit;
@@ -20,7 +20,6 @@ class Rayels_Loi25 {
     private $version = '2.0.0';
 
     public function __construct() {
-        add_action('plugins_loaded', array($this, 'load_textdomain'));
         add_action('wp_footer', array($this, 'inject_banner'));
         add_action('wp_head', array($this, 'inject_head'), 1);
         add_action('admin_menu', array($this, 'add_settings_page'));
@@ -29,11 +28,6 @@ class Rayels_Loi25 {
         add_action('wp_ajax_loi25_log_consent', array($this, 'ajax_log_consent'));
         add_action('wp_ajax_nopriv_loi25_log_consent', array($this, 'ajax_log_consent'));
         register_activation_hook(__FILE__, array($this, 'activate'));
-    }
-
-    // ─── Load translations ───
-    public function load_textdomain() {
-        load_plugin_textdomain('rayels-loi25', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
 
     // ─── Activation: Create stats table ───
@@ -79,7 +73,7 @@ class Rayels_Loi25 {
             'style'           => get_option('rayels_loi25_style', 'bar'),
             'glassmorphism'   => get_option('rayels_loi25_glass', '0'),
             'privacy_url'     => get_option('rayels_loi25_privacy_url', '/politique-de-confidentialite'),
-            'powered_by'      => get_option('rayels_loi25_powered_by', '1'),
+            'powered_by'      => get_option('rayels_loi25_powered_by', '0'),
             'brand_color'     => get_option('rayels_loi25_brand_color', '#1d4ed8'),
             'consent_mode'    => get_option('rayels_loi25_consent_mode', '0'),
             'expiry_days'     => intval(get_option('rayels_loi25_expiry', 365)),
@@ -520,7 +514,7 @@ class Rayels_Loi25 {
             'rayels_loi25_show_icon',
         );
         foreach ($fields as $f) {
-            register_setting('rayels_loi25_settings', $f);
+            register_setting('rayels_loi25_settings', $f, array('sanitize_callback' => 'sanitize_text_field'));
         }
     }
 

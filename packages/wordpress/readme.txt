@@ -2,9 +2,9 @@
 Contributors: rayelsconsulting
 Tags: loi 25, quebec, cookie consent, privacy, gdpr, law 25, bill 64, cookies, consent mode
 Requires at least: 5.0
-Tested up to: 6.7
+Tested up to: 6.9
 Stable tag: 2.0.0
-Requires PHP: 7.2
+Requires PHP: 7.4
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
