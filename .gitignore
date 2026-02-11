@@ -5,3 +5,17 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+
+# ─── SENSITIVE / INTERNAL ───
+CLAUDE.md
+.claude/
+.agent/
+
+# ─── Dev/Test files (not needed in public repo) ───
+test-plugin.js
+test-banner.html
+compile-translations.php
+generate-store-images.ps1
+banner-preview.html
+packages/wordpress/test-banner.html
+packages/wordpress/compile-translations.php

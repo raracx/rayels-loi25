@@ -158,7 +158,7 @@ Code snippets to quickly add Loi 25 consent to any project.
 | `loi25-html` | HTML script tag banner | HTML |
 | `loi25-wp` | WordPress functions.php snippet | PHP |
 
-Install from the [VS Code Marketplace](#) or from [`packages/vscode-extension/`](./packages/vscode-extension).
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=rayels-consulting.rayels-loi25-snippets) or from [`packages/vscode-extension/`](./packages/vscode-extension).
 
 ---
 

@@ -1,0 +1,48 @@
+# Translation file for Loi 25 Quebec Cookie Consent
+# Copyright (C) 2026 Rayels Consulting
+# This file is distributed under the same license as the Loi 25 plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: Loi 25 Quebec Cookie Consent 2.0.0\n"
+"Report-Msgid-Bugs-To: https://rayelsconsulting.com\n"
+"POT-Creation-Date: 2026-02-10 20:00:00+0000\n"
+"PO-Revision-Date: 2026-02-10 20:00:00+0000\n"
+"Last-Translator: Rayels Consulting\n"
+"Language-Team: French\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: rayels-loi25.php
+msgid "Loi 25 — Consent Statistics"
+msgstr "Loi 25 — Statistiques de consentement"
+
+#: rayels-loi25.php
+msgid "No data yet. Statistics will appear once visitors interact with the consent banner."
+msgstr "Aucune donnée pour le moment. Les statistiques apparaîtront lorsque les visiteurs interagiront avec la bannière de consentement."
+
+#: rayels-loi25.php
+msgid "Accept All"
+msgstr "Tout accepter"
+
+#: rayels-loi25.php
+msgid "Necessary Only"
+msgstr "Nécessaires seulement"
+
+#: rayels-loi25.php
+msgid "Total"
+msgstr "Total"
+
+#: rayels-loi25.php
+msgid "Today"
+msgstr "Aujourd'hui"
+
+#: rayels-loi25.php
+msgid "Loi 25 Cookie Consent"
+msgstr "Consentement aux cookies Loi 25"
+
+#: rayels-loi25.php
+msgid "Loi 25"
+msgstr "Loi 25"
