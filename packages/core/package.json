@@ -1,6 +1,6 @@
 {
   "name": "@rayels/loi25-core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Loi 25 Quebec cookie consent manager — lightweight, bilingual, GDPR/Loi 25 compliant. By Rayels Consulting.",
   "main": "index.js",
   "types": "index.d.ts",

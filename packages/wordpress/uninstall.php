@@ -4,10 +4,12 @@
  * Removes all plugin data from the database.
  */
 
-if (!defined('WP_UNINSTALL_PLUGIN')) exit;
+if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+    die;
+}
 
 // Delete all options
-$options = array(
+$rayels_loi25_options = array(
     'rayels_loi25_lang', 'rayels_loi25_position', 'rayels_loi25_theme',
     'rayels_loi25_style', 'rayels_loi25_glass', 'rayels_loi25_privacy_url',
     'rayels_loi25_powered_by', 'rayels_loi25_brand_color',
@@ -21,10 +23,11 @@ $options = array(
     'rayels_loi25_show_icon',
 );
 
-foreach ($options as $opt) {
-    delete_option($opt);
+foreach ( $rayels_loi25_options as $rayels_loi25_opt ) {
+    delete_option( $rayels_loi25_opt );
 }
 
 // Drop statistics table
 global $wpdb;
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}loi25_stats");
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}loi25_stats" );

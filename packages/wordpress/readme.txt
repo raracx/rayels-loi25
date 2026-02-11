@@ -1,6 +1,6 @@
-=== Loi 25 Quebec Cookie Consent — by Rayels Consulting ===
+=== Loi 25 Quebec ===
 Contributors: rayelsconsulting
-Tags: loi 25, quebec, cookie consent, privacy, gdpr, law 25, bill 64, cookies, consent mode
+Tags: loi 25, quebec, cookie consent, privacy, law 25
 Requires at least: 5.0
 Tested up to: 6.9
 Stable tag: 2.0.0
@@ -8,7 +8,7 @@ Requires PHP: 7.4
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
-The most complete FREE Loi 25 (Bill 64) cookie consent solution for Quebec. 100% free, no premium version. Script blocking, Google Consent Mode v2, 3 banner styles, bilingual, zero dependencies.
+FREE Loi 25 (Bill 64) cookie consent for Quebec. Script blocking, Google Consent Mode v2, 3 styles, bilingual.
 
 == Description ==
 
@@ -16,27 +16,28 @@ Quebec's **Law 25** (formerly Bill 64) requires all websites collecting personal
 
 **Loi 25 Cookie Consent** is the most feature-rich, lightweight, and easy-to-use consent plugin built specifically for Quebec businesses. **100% free — no premium version, no upsells, no monthly fees. Ever.**
 
-> 🎁 Every feature included for free. Other plugins charge $49-149/year for features like Script Vault and Google Consent Mode v2. We include them all at no cost.
+> Every feature included for free. Other plugins charge $49-149/year for features like Script Vault and Google Consent Mode v2. We include them all at no cost.
 
 = Why Choose This Plugin? =
 
-✅ **Zero config needed** — works out of the box
-✅ **Script Vault** — paste your Google Analytics / Facebook Pixel code and it auto-blocks until consent is given
-✅ **Google Consent Mode v2** — automatic integration with Google Ads & Analytics
-✅ **3 banner styles** — full-width bar, centered popup, or corner widget
-✅ **Glassmorphism mode** — modern frosted glass effect
-✅ **Bilingual** — French (default) and English with auto-detection
-✅ **Custom text** — override every string in both languages
-✅ **Brand color picker** — match your website's colors
-✅ **Consent expiry** — auto re-ask after X days
-✅ **Re-consent button** — floating cookie icon so visitors can change their mind
-✅ **Consent statistics** — dashboard widget showing accept/reject rates
-✅ **Smooth animations** — slide or fade transitions
-✅ **Custom CSS** — full styling control for power users
-✅ **Accessible** — keyboard navigation, ARIA labels, focus management
-✅ **Clean uninstall** — removes all data when deleted
-✅ **Zero dependencies** — no jQuery, no external scripts, under 10KB
-✅ **100% FREE** — all features included, no premium version, no upsells, no hidden fees
+* **Zero config needed** — works out of the box
+* **Script Vault** — paste your Google Analytics / Facebook Pixel code and it auto-blocks until consent is given
+* **Google Consent Mode v2** — automatic integration with Google Ads & Analytics
+* **3 banner styles** — full-width bar, centered popup, or corner widget
+* **Glassmorphism mode** — modern frosted glass effect
+* **Bilingual** — French (default) and English with auto-detection
+* **Custom text** — override every string in both languages
+* **Brand color picker** — match your website's colors
+* **Consent expiry** — auto re-ask after X days
+* **Re-consent button** — floating cookie icon so visitors can change their mind
+* **Consent statistics** — dashboard widget showing accept/reject rates
+* **Smooth animations** — slide or fade transitions
+* **Custom CSS** — full styling control for power users
+* **Accessible** — keyboard navigation, ARIA labels, focus management
+* **Auto cache flush** — clears site cache when settings change, compatible with WP Rocket, LiteSpeed, W3TC, and more
+* **Clean uninstall** — removes all data when deleted
+* **Zero dependencies** — no jQuery, no external scripts, under 10KB
+* **100% FREE** — all features included, no premium version, no upsells, no hidden fees
 
 = Who Is This For? =
 
@@ -59,7 +60,7 @@ Simply paste your Google Analytics, Meta Pixel, Hotjar, or any tracking code int
 
 1. Upload the plugin files to the `/wp-content/plugins/rayels-loi25` directory, or install the plugin through the WordPress plugins screen directly.
 2. Activate the plugin through the 'Plugins' screen in WordPress.
-3. Go to **Settings → 🍪 Loi 25** to configure your banner.
+3. Go to **Settings > Loi 25** to configure your banner.
 4. (Optional) Paste your tracking scripts into the **Script Vault** tab.
 5. Done! The banner appears automatically for new visitors.
 
@@ -84,7 +85,10 @@ No. The entire plugin is under 10KB of vanilla JavaScript with zero external dep
 All plugin data (settings and statistics) is completely removed from your database. Clean uninstall.
 
 = Can visitors change their consent? =
-Yes. A small floating cookie button (🍪) lets visitors re-open the banner at any time.
+Yes. A small floating cookie button lets visitors re-open the banner at any time.
+
+= Will my changes show immediately if I use a caching plugin? =
+Yes. The plugin automatically flushes the cache from popular caching plugins (WP Rocket, LiteSpeed, W3 Total Cache, WP Super Cache, and more) whenever you save settings.
 
 == Screenshots ==
 
@@ -113,6 +117,7 @@ Yes. A small floating cookie button (🍪) lets visitors re-open the banner at a
 *   NEW: Accessibility improvements (ARIA, keyboard, focus).
 *   NEW: Clean uninstall removes all data.
 *   NEW: Modern tabbed admin settings page.
+*   NEW: Auto cache flush on settings save.
 *   IMPROVED: Brand color now applies to re-consent button too.
 
 = 1.1.0 =

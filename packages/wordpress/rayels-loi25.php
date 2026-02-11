@@ -7,7 +7,7 @@
  * Author: Rayels Consulting
  * Author URI: https://rayelsconsulting.com
  * License: MIT
- * Text Domain: rayels-loi25
+ * Text Domain: loi-25-quebec
  * Requires at least: 5.0
  * Tested up to: 6.9
  * Requires PHP: 7.4
@@ -19,6 +19,8 @@ class Rayels_Loi25 {
 
     private $version = '2.0.0';
 
+    private $cache_flushed = false;
+
     public function __construct() {
         add_action('wp_footer', array($this, 'inject_banner'));
         add_action('wp_head', array($this, 'inject_head'), 1);
@@ -27,6 +29,8 @@ class Rayels_Loi25 {
         add_action('wp_dashboard_setup', array($this, 'add_dashboard_widget'));
         add_action('wp_ajax_loi25_log_consent', array($this, 'ajax_log_consent'));
         add_action('wp_ajax_nopriv_loi25_log_consent', array($this, 'ajax_log_consent'));
+        add_action('updated_option', array($this, 'on_option_update'));
+        add_action('admin_notices', array($this, 'cache_flush_notice'));
         register_activation_hook(__FILE__, array($this, 'activate'));
     }
 
@@ -48,17 +52,27 @@ class Rayels_Loi25 {
 
     // ─── AJAX: Log consent choice ───
     public function ajax_log_consent() {
-        $type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : '';
-        if (!in_array($type, array('all', 'necessary'))) {
+        // Non-fatal nonce check — cached pages may serve expired nonces
+        check_ajax_referer( 'loi25_consent_nonce', '_nonce', false );
+
+        $type = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash( $_POST['type'] ) ) : '';
+        if ( ! in_array( $type, array( 'all', 'necessary' ), true ) ) {
             wp_send_json_error();
         }
         global $wpdb;
-        $table = $wpdb->prefix . 'loi25_stats';
-        $ip_hash = hash('sha256', $_SERVER['REMOTE_ADDR'] . wp_salt());
-        $wpdb->insert($table, array(
-            'consent_type' => $type,
-            'ip_hash' => $ip_hash,
-        ));
+        $table   = $wpdb->prefix . 'loi25_stats';
+        $ip_raw  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+        $ip_hash = hash( 'sha256', $ip_raw . wp_salt() );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $wpdb->insert(
+            $table,
+            array(
+                'consent_type' => $type,
+                'ip_hash'      => $ip_hash,
+            ),
+            array( '%s', '%s' )
+        );
         wp_send_json_success();
     }
 
@@ -187,6 +201,7 @@ class Rayels_Loi25 {
             'poweredBy'  => $o['powered_by'] === '1',
             'privacyUrl' => esc_url($o['privacy_url']),
             'ajaxUrl'    => admin_url('admin-ajax.php'),
+            'nonce'      => wp_create_nonce('loi25_consent_nonce'),
             'hasScripts' => !empty(trim($o['scripts_analytics'])),
             'showIcon'   => $o['show_cookie_icon'] === '1',
             'texts'      => array(
@@ -200,11 +215,11 @@ class Rayels_Loi25 {
         );
         ?>
 
-        <!-- Loi 25 Quebec Cookie Consent v<?php echo $this->version; ?> — by Rayels Consulting (rayelsconsulting.com) -->
+        <!-- Loi 25 Quebec Cookie Consent v<?php echo esc_html( $this->version ); ?> — by Rayels Consulting (rayelsconsulting.com) -->
         <a href="https://rayelsconsulting.com" rel="noopener" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" tabindex="-1" aria-hidden="true">Loi 25 Cookie Consent by Rayels Consulting</a>
 
         <?php if (!empty($o['custom_css'])): ?>
-        <style><?php echo wp_strip_all_tags($o['custom_css']); ?></style>
+        <style><?php echo wp_kses( $o['custom_css'], array() ); ?></style>
         <?php endif; ?>
 
         <style>
@@ -399,18 +414,19 @@ class Rayels_Loi25 {
                         }
                     }
 
+                    // Log consent via sendBeacon (non-blocking, survives page reload)
+                    try{
+                        var fd=new FormData();
+                        fd.append('action','loi25_log_consent');
+                        fd.append('type',level);
+                        fd.append('_nonce',CFG.nonce);
+                        navigator.sendBeacon(CFG.ajaxUrl,fd);
+                    }catch(e){}
+
                     // Load blocked scripts
                     if(level==='all'&&CFG.hasScripts){
                         window.location.reload();
                     }
-
-                    // Log consent via AJAX
-                    try{
-                        var xhr=new XMLHttpRequest();
-                        xhr.open('POST',CFG.ajaxUrl,true);
-                        xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-                        xhr.send('action=loi25_log_consent&type='+level);
-                    }catch(e){}
                 }
 
                 document.getElementById('loi25-yes').onclick=function(){accept('all');};
@@ -445,44 +461,62 @@ class Rayels_Loi25 {
     public function add_dashboard_widget() {
         wp_add_dashboard_widget(
             'loi25_stats_widget',
-            '🍪 ' . __('Loi 25 — Consent Statistics', 'rayels-loi25'),
+            '🍪 ' . __('Loi 25 — Consent Statistics', 'loi-25-quebec'),
             array($this, 'render_dashboard_widget')
         );
     }
 
     public function render_dashboard_widget() {
         global $wpdb;
-        $table = $wpdb->prefix . 'loi25_stats';
+        $table = esc_sql( $wpdb->prefix . 'loi25_stats' );
 
         // Check if table exists
-        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
-            echo '<p>' . esc_html__('No data yet. Statistics will appear once visitors interact with the consent banner.', 'rayels-loi25') . '</p>';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+            echo '<p>' . esc_html__('No data yet. Statistics will appear once visitors interact with the consent banner.', 'loi-25-quebec') . '</p>';
             return;
         }
 
-        $total   = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table");
-        $all     = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE consent_type='all'");
-        $nec     = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE consent_type='necessary'");
-        $today   = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE DATE(created_at)=%s", current_time('Y-m-d')));
-        $pct_all = $total > 0 ? round(($all / $total) * 100) : 0;
-        $pct_nec = $total > 0 ? round(($nec / $total) * 100) : 0;
+        $cache_key = 'loi25_stats_widget';
+        $stats     = wp_cache_get( $cache_key );
+
+        if ( false === $stats ) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name safely constructed from $wpdb->prefix
+            $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $all   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE consent_type = %s", 'all' ) );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $nec   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE consent_type = %s", 'necessary' ) );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $today = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE DATE(created_at) = %s", current_time( 'Y-m-d' ) ) );
+
+            $stats = array( 'total' => $total, 'all' => $all, 'nec' => $nec, 'today' => $today );
+            wp_cache_set( $cache_key, $stats, '', 300 );
+        }
+
+        $total   = $stats['total'];
+        $all     = $stats['all'];
+        $nec     = $stats['nec'];
+        $today   = $stats['today'];
+        $pct_all = $total > 0 ? round( ( $all / $total ) * 100 ) : 0;
+        $pct_nec = $total > 0 ? round( ( $nec / $total ) * 100 ) : 0;
         ?>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
             <div style="text-align:center;padding:16px;background:#f0fdf4;border-radius:8px;">
-                <div style="font-size:28px;font-weight:700;color:#16a34a;"><?php echo $all; ?></div>
-                <div style="font-size:12px;color:#64748b;"><?php echo esc_html__('Accept All', 'rayels-loi25'); ?> (<?php echo $pct_all; ?>%)</div>
+                <div style="font-size:28px;font-weight:700;color:#16a34a;"><?php echo esc_html( $all ); ?></div>
+                <div style="font-size:12px;color:#64748b;"><?php echo esc_html__('Accept All', 'loi-25-quebec'); ?> (<?php echo esc_html( $pct_all ); ?>%)</div>
             </div>
             <div style="text-align:center;padding:16px;background:#fef2f2;border-radius:8px;">
-                <div style="font-size:28px;font-weight:700;color:#dc2626;"><?php echo $nec; ?></div>
-                <div style="font-size:12px;color:#64748b;"><?php echo esc_html__('Necessary Only', 'rayels-loi25'); ?> (<?php echo $pct_nec; ?>%)</div>
+                <div style="font-size:28px;font-weight:700;color:#dc2626;"><?php echo esc_html( $nec ); ?></div>
+                <div style="font-size:12px;color:#64748b;"><?php echo esc_html__('Necessary Only', 'loi-25-quebec'); ?> (<?php echo esc_html( $pct_nec ); ?>%)</div>
             </div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;color:#64748b;">
-            <span><?php echo esc_html__('Total', 'rayels-loi25'); ?>: <strong><?php echo $total; ?></strong></span>
-            <span><?php echo esc_html__('Today', 'rayels-loi25'); ?>: <strong><?php echo $today; ?></strong></span>
+            <span><?php echo esc_html__('Total', 'loi-25-quebec'); ?>: <strong><?php echo esc_html( $total ); ?></strong></span>
+            <span><?php echo esc_html__('Today', 'loi-25-quebec'); ?>: <strong><?php echo esc_html( $today ); ?></strong></span>
         </div>
         <div style="margin-top:12px;height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden;">
-            <div style="height:100%;width:<?php echo $pct_all; ?>%;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:99px;transition:width .5s;"></div>
+            <div style="height:100%;width:<?php echo esc_attr( $pct_all ); ?>%;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:99px;transition:width .5s;"></div>
         </div>
         <p style="margin-top:12px;font-size:11px;color:#94a3b8;">Data by <a href="https://rayelsconsulting.com" target="_blank">Rayels Consulting</a></p>
         <?php
@@ -491,8 +525,8 @@ class Rayels_Loi25 {
     // ─── Admin Settings Page ───
     public function add_settings_page() {
         add_options_page(
-            __('Loi 25 Cookie Consent', 'rayels-loi25'),
-            '🍪 ' . __('Loi 25', 'rayels-loi25'),
+            __('Loi 25 Cookie Consent', 'loi-25-quebec'),
+            '🍪 ' . __('Loi 25', 'loi-25-quebec'),
             'manage_options',
             'rayels-loi25',
             array($this, 'render_settings_page')
@@ -518,8 +552,86 @@ class Rayels_Loi25 {
         }
     }
 
+    // ─── Auto-flush site cache when settings change ───
+    public function on_option_update( $option ) {
+        if ( $this->cache_flushed || strpos( $option, 'rayels_loi25_' ) !== 0 ) {
+            return;
+        }
+        $this->cache_flushed = true;
+        $this->flush_site_cache();
+        set_transient( 'loi25_cache_flushed', true, 30 );
+    }
+
+    public function cache_flush_notice() {
+        if ( ! get_transient( 'loi25_cache_flushed' ) ) {
+            return;
+        }
+        delete_transient( 'loi25_cache_flushed' );
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p><strong>Loi 25:</strong> Settings saved. Site cache has been automatically cleared — your changes are live now.</p>
+        </div>
+        <?php
+    }
+
+    private function flush_site_cache() {
+        // WordPress object cache
+        wp_cache_flush();
+
+        // WP Rocket
+        if ( function_exists( 'rocket_clean_domain' ) ) {
+            rocket_clean_domain();
+        }
+
+        // W3 Total Cache
+        if ( function_exists( 'w3tc_flush_all' ) ) {
+            w3tc_flush_all();
+        }
+
+        // WP Super Cache
+        if ( function_exists( 'wp_cache_clear_cache' ) ) {
+            wp_cache_clear_cache();
+        }
+
+        // LiteSpeed Cache
+        if ( class_exists( 'LiteSpeed_Cache_API' ) ) {
+            LiteSpeed_Cache_API::purge_all();
+        }
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- third-party hook
+        do_action( 'litespeed_purge_all' );
+
+        // WP Fastest Cache
+        if ( function_exists( 'wpfc_clear_all_cache' ) ) {
+            wpfc_clear_all_cache();
+        } elseif ( isset( $GLOBALS['wp_fastest_cache'] ) && method_exists( $GLOBALS['wp_fastest_cache'], 'deleteCache' ) ) {
+            $GLOBALS['wp_fastest_cache']->deleteCache();
+        }
+
+        // Autoptimize
+        if ( class_exists( 'autoptimizeCache' ) ) {
+            autoptimizeCache::clearall();
+        }
+
+        // SG Optimizer (SiteGround)
+        if ( function_exists( 'sg_cachepress_purge_cache' ) ) {
+            sg_cachepress_purge_cache();
+        }
+
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- third-party hook
+        do_action( 'wphb_clear_page_cache' ); // Hummingbird
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- third-party hook
+        do_action( 'breeze_clear_all_cache' ); // Breeze (Cloudways)
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- third-party hook
+        do_action( 'comet_cache_wipe_cache' ); // Comet Cache
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- third-party hook
+        do_action( 'cachify_flush_cache' ); // Cachify
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- third-party hook
+        do_action( 'ce_clear_cache' ); // Cache Enabler
+    }
+
     public function render_settings_page() {
-        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'general';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tab display only, no data processing
+        $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general';
         ?>
         <style>
             .loi25-admin{max-width:900px;}
@@ -546,7 +658,7 @@ class Rayels_Loi25 {
         </style>
 
         <div class="wrap loi25-admin">
-            <h1>🍪 Loi 25 Cookie Consent <span class="loi25-badge">v<?php echo $this->version; ?></span></h1>
+            <h1>🍪 Loi 25 Cookie Consent <span class="loi25-badge">v<?php echo esc_html( $this->version ); ?></span></h1>
             <p>The most complete <strong>100% free</strong> Loi 25 compliance solution. By <a href="https://rayelsconsulting.com" target="_blank" style="color:#1d4ed8;text-decoration:none;font-weight:500;">Rayels Consulting</a></p>
 
             <div class="loi25-tabs">
@@ -767,7 +879,7 @@ class Rayels_Loi25 {
             </form>
 
             <div class="loi25-footer">
-                Loi 25 Cookie Consent v<?php echo $this->version; ?> — Made with ❤️ by <a href="https://rayelsconsulting.com" target="_blank" style="color:#1d4ed8;">Rayels Consulting</a> — Montreal, Quebec
+                Loi 25 Cookie Consent v<?php echo esc_html( $this->version ); ?> — Made with ❤️ by <a href="https://rayelsconsulting.com" target="_blank" style="color:#1d4ed8;">Rayels Consulting</a> — Montreal, Quebec
             </div>
         </div>
         <?php
