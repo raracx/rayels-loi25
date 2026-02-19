@@ -15,7 +15,7 @@ $rayels_loi25_options = array(
     'rayels_loi25_powered_by', 'rayels_loi25_brand_color',
     'rayels_loi25_consent_mode', 'rayels_loi25_expiry',
     'rayels_loi25_reconsent', 'rayels_loi25_animation',
-    'rayels_loi25_custom_css', 'rayels_loi25_scripts_analytics',
+    'rayels_loi25_custom_css',
     'rayels_loi25_title_fr', 'rayels_loi25_title_en',
     'rayels_loi25_message_fr', 'rayels_loi25_message_en',
     'rayels_loi25_btn_accept_fr', 'rayels_loi25_btn_accept_en',
@@ -30,4 +30,4 @@ foreach ( $rayels_loi25_options as $rayels_loi25_opt ) {
 // Drop statistics table
 global $wpdb;
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}loi25_stats" );
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rayels_loi25_stats" );

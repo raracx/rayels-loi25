@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Loi 25 Quebec
  * Plugin URI: https://rayelsconsulting.com/tools/loi25-wordpress-plugin
- * Description: The most complete FREE Loi 25 (Bill 64) cookie consent solution for Quebec. 100% free — no premium version. Script blocking, Google Consent Mode v2, 3 banner styles, bilingual, zero dependencies.
- * Version: 2.0.0
+ * Description: Loi 25 (Bill 64) cookie consent for Quebec. Google Consent Mode v2, 3 banner styles, bilingual, zero dependencies.
+ * Version: 2.0.1
  * Author: Rayels Consulting
  * Author URI: https://rayelsconsulting.com
  * License: MIT
@@ -17,18 +17,17 @@ if (!defined('ABSPATH')) exit;
 
 class Rayels_Loi25 {
 
-    private $version = '2.0.0';
-
+    private $version = '2.0.1';
     private $cache_flushed = false;
 
     public function __construct() {
-        add_action('wp_footer', array($this, 'inject_banner'));
-        add_action('wp_head', array($this, 'inject_head'), 1);
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_public_assets'), 1);
         add_action('admin_menu', array($this, 'add_settings_page'));
         add_action('admin_init', array($this, 'register_settings'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         add_action('wp_dashboard_setup', array($this, 'add_dashboard_widget'));
-        add_action('wp_ajax_loi25_log_consent', array($this, 'ajax_log_consent'));
-        add_action('wp_ajax_nopriv_loi25_log_consent', array($this, 'ajax_log_consent'));
+        add_action('wp_ajax_rayels_loi25_log_consent', array($this, 'ajax_log_consent'));
+        add_action('wp_ajax_nopriv_rayels_loi25_log_consent', array($this, 'ajax_log_consent'));
         add_action('updated_option', array($this, 'on_option_update'));
         add_action('admin_notices', array($this, 'cache_flush_notice'));
         register_activation_hook(__FILE__, array($this, 'activate'));
@@ -37,7 +36,7 @@ class Rayels_Loi25 {
     // ─── Activation: Create stats table ───
     public function activate() {
         global $wpdb;
-        $table = $wpdb->prefix . 'loi25_stats';
+        $table = $wpdb->prefix . 'rayels_loi25_stats';
         $charset = $wpdb->get_charset_collate();
         $sql = "CREATE TABLE IF NOT EXISTS $table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -53,14 +52,14 @@ class Rayels_Loi25 {
     // ─── AJAX: Log consent choice ───
     public function ajax_log_consent() {
         // Non-fatal nonce check — cached pages may serve expired nonces
-        check_ajax_referer( 'loi25_consent_nonce', '_nonce', false );
+        check_ajax_referer( 'rayels_loi25_consent_nonce', '_nonce', false );
 
         $type = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash( $_POST['type'] ) ) : '';
         if ( ! in_array( $type, array( 'all', 'necessary' ), true ) ) {
             wp_send_json_error();
         }
         global $wpdb;
-        $table   = $wpdb->prefix . 'loi25_stats';
+        $table   = $wpdb->prefix . 'rayels_loi25_stats';
         $ip_raw  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
         $ip_hash = hash( 'sha256', $ip_raw . wp_salt() );
 
@@ -94,7 +93,6 @@ class Rayels_Loi25 {
             'show_reconsent'  => get_option('rayels_loi25_reconsent', '1'),
             'animation'       => get_option('rayels_loi25_animation', 'slide'),
             'custom_css'      => get_option('rayels_loi25_custom_css', ''),
-            'scripts_analytics' => get_option('rayels_loi25_scripts_analytics', ''),
             'title_fr'        => get_option('rayels_loi25_title_fr', ''),
             'title_en'        => get_option('rayels_loi25_title_en', ''),
             'message_fr'      => get_option('rayels_loi25_message_fr', ''),
@@ -107,54 +105,29 @@ class Rayels_Loi25 {
         );
     }
 
-    // ─── HEAD injection: Google Consent Mode + blocked scripts ───
-    public function inject_head() {
+    // ─── Enqueue Public Assets ───
+    public function enqueue_public_assets() {
         $o = $this->get_opts();
 
-        // Google Consent Mode v2
+        // ─── Google Consent Mode v2 (loaded in <head>) ───
         if ($o['consent_mode'] === '1') {
-            ?>
-            <script>
-            window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
-            (function(){var c=localStorage.getItem('loi25-consent');
-            if(!c){gtag('consent','default',{'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied','analytics_storage':'denied'});}
-            else if(c==='all'){gtag('consent','default',{'ad_storage':'granted','ad_user_data':'granted','ad_personalization':'granted','analytics_storage':'granted'});}
-            else{gtag('consent','default',{'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied','analytics_storage':'denied'});}
-            })();
-            </script>
-            <?php
+            wp_register_script('rayels-loi25-gcm', '', array(), $this->version, false);
+            wp_enqueue_script('rayels-loi25-gcm');
+            $gcm_js = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}"
+                . "(function(){var c=localStorage.getItem('loi25-consent');"
+                . "if(!c||c!=='all'){gtag('consent','default',{'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied','analytics_storage':'denied'});}"
+                . "else{gtag('consent','default',{'ad_storage':'granted','ad_user_data':'granted','ad_personalization':'granted','analytics_storage':'granted'});}"
+                . "})();";
+            wp_add_inline_script('rayels-loi25-gcm', $gcm_js);
         }
 
-        // Script Vault: inject analytics scripts ONLY if consent === 'all'
-        $scripts = trim($o['scripts_analytics']);
-        if (!empty($scripts)) {
-            ?>
-            <script>
-            (function(){
-                if(localStorage.getItem('loi25-consent')==='all'){
-                    var s=<?php echo json_encode($scripts); ?>;
-                    var tmp=document.createElement('div');tmp.innerHTML=s;
-                    var els=tmp.querySelectorAll('script');
-                    for(var i=0;i<els.length;i++){
-                        var ns=document.createElement('script');
-                        if(els[i].src){ns.src=els[i].src;}
-                        else{ns.textContent=els[i].text||els[i].textContent||'';}
-                        var attrs=els[i].attributes;
-                        for(var j=0;j<attrs.length;j++){
-                            if(attrs[j].name!=='src')ns.setAttribute(attrs[j].name,attrs[j].value);
-                        }
-                        document.head.appendChild(ns);
-                    }
-                }
-            })();
-            </script>
-            <?php
+        wp_enqueue_style('rayels-loi25-css', plugins_url('assets/css/public.css', __FILE__), array(), $this->version);
+        
+        if (!empty($o['custom_css'])) {
+             wp_add_inline_style('rayels-loi25-css', $o['custom_css']);
         }
-    }
 
-    // ─── FOOTER injection: Banner + Re-consent button ───
-    public function inject_banner() {
-        $o = $this->get_opts();
+        wp_enqueue_script('rayels-loi25-js', plugins_url('assets/js/public.js', __FILE__), array(), $this->version, true);
 
         // Resolve language
         $lang = $o['lang'] === 'auto' ? (in_array($o['wp_locale'], array('fr', 'en')) ? $o['wp_locale'] : 'fr') : $o['lang'];
@@ -201,8 +174,7 @@ class Rayels_Loi25 {
             'poweredBy'  => $o['powered_by'] === '1',
             'privacyUrl' => esc_url($o['privacy_url']),
             'ajaxUrl'    => admin_url('admin-ajax.php'),
-            'nonce'      => wp_create_nonce('loi25_consent_nonce'),
-            'hasScripts' => !empty(trim($o['scripts_analytics'])),
+            'nonce'      => wp_create_nonce('rayels_loi25_consent_nonce'),
             'showIcon'   => $o['show_cookie_icon'] === '1',
             'texts'      => array(
                 'title'   => $title,
@@ -213,254 +185,21 @@ class Rayels_Loi25 {
                 'powered' => $def['powered'],
             ),
         );
-        ?>
 
-        <!-- Loi 25 Quebec Cookie Consent v<?php echo esc_html( $this->version ); ?> — by Rayels Consulting (rayelsconsulting.com) -->
-        <a href="https://rayelsconsulting.com" rel="noopener" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" tabindex="-1" aria-hidden="true">Loi 25 Cookie Consent by Rayels Consulting</a>
+        wp_add_inline_script('rayels-loi25-js', 'window.rayelsLoi25 = ' . wp_json_encode($js_config) . ';', 'before');
+    }
 
-        <?php if (!empty($o['custom_css'])): ?>
-        <style><?php echo wp_kses( $o['custom_css'], array() ); ?></style>
-        <?php endif; ?>
-
-        <style>
-        #loi25-banner{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;line-height:1.5;box-sizing:border-box;}
-        #loi25-banner *{box-sizing:border-box;margin:0;padding:0;}
-        #loi25-banner button{cursor:pointer;transition:transform .15s,opacity .15s;}
-        #loi25-banner button:hover{transform:translateY(-1px);opacity:.9;}
-        #loi25-banner button:focus-visible,#loi25-banner a:focus-visible{outline:2px solid #1d4ed8;outline-offset:2px;}
-        #loi25-banner.loi25-anim-slide{transition:transform .4s cubic-bezier(.4,0,.2,1),opacity .4s ease;}
-        #loi25-banner.loi25-anim-fade{transition:opacity .5s ease;}
-        #loi25-banner.loi25-hidden-bottom{transform:translateY(100%);opacity:0;}
-        #loi25-banner.loi25-hidden-top{transform:translateY(-100%);opacity:0;}
-        #loi25-banner.loi25-hidden-fade{opacity:0;}
-        #loi25-banner.loi25-hidden-popup{opacity:0;transform:scale(.9);}
-        #loi25-banner.loi25-style-popup{transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .35s ease;}
-        #loi25-banner.loi25-style-corner{transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .35s ease;}
-        #loi25-banner.loi25-glass{backdrop-filter:blur(16px) saturate(1.8);-webkit-backdrop-filter:blur(16px) saturate(1.8);}
-        #loi25-reconsent{position:fixed;bottom:20px;left:20px;z-index:999998;width:44px;height:44px;border-radius:50%;border:none;background:#1d4ed8;color:#fff;font-size:20px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:transform .2s,opacity .3s;display:flex;align-items:center;justify-content:center;}
-        #loi25-reconsent:hover{transform:scale(1.1);}
-        @media(max-width:600px){
-            #loi25-banner .loi25-inner{padding:16px!important;}
-            #loi25-banner .loi25-btns{flex-direction:column!important;}
-            #loi25-banner .loi25-btns button{width:100%!important;}
+    // ─── Enqueue Admin Assets ───
+    public function enqueue_admin_assets($hook) {
+        if (strpos($hook, 'rayels-loi25') !== false) {
+            wp_enqueue_style('rayels-loi25-admin-css', plugins_url('assets/css/admin.css', __FILE__), array(), $this->version);
         }
-        </style>
-
-        <script>
-        (function(){
-            'use strict';
-            var CFG=<?php echo json_encode($js_config); ?>;
-            var SK='loi25-consent',SD='loi25-consent-date';
-
-            // ─── Check expiry ───
-            function isExpired(){
-                var d=localStorage.getItem(SD);
-                if(!d)return true;
-                var age=(Date.now()-parseInt(d,10))/(1000*60*60*24);
-                return age>CFG.expiry;
-            }
-            function hasConsent(){
-                try{return localStorage.getItem(SK)&&!isExpired();}catch(e){return false;}
-            }
-
-            // ─── Re-consent floating button ───
-            function showReconsent(){
-                if(!CFG.reconsent)return;
-                var rb=document.createElement('button');
-                rb.id='loi25-reconsent';
-                rb.setAttribute('aria-label',CFG.lang==='fr'?'Gérer les cookies':'Manage cookies');
-                rb.innerHTML=CFG.showIcon?'🍪':'⚙️';
-                rb.style.background=CFG.brand;
-                rb.onclick=function(){
-                    try{localStorage.removeItem(SK);localStorage.removeItem(SD);}catch(e){}
-                    rb.remove();
-                    showBanner();
-                };
-                document.body.appendChild(rb);
-            }
-
-            // ─── If already consented ───
-            if(hasConsent()){
-                showReconsent();
-                return;
-            }
-
-            // ─── If expired, clear old consent ───
-            if(localStorage.getItem(SK)&&isExpired()){
-                try{localStorage.removeItem(SK);localStorage.removeItem(SD);}catch(e){}
-            }
-
-            // ─── Theme colors ───
-            var dk=CFG.theme==='dark';
-            var colors={
-                bg:dk?'rgba(24,24,27,'+(CFG.glass?'.75':'1')+')':'rgba(255,255,255,'+(CFG.glass?'.8':'1')+')',
-                text:dk?'#e4e4e7':'#1e293b',
-                muted:dk?'#a1a1aa':'#64748b',
-                border:dk?'#3f3f46':'#e2e8f0',
-                btnBg:dk?'#27272a':'#f1f5f9',
-                btnText:dk?'#e4e4e7':'#334155',
-            };
-
-            function showBanner(){
-                // Cleanup any existing banner/overlay first
-                var old=document.getElementById('loi25-banner');if(old)old.remove();
-                var oldOv=document.getElementById('loi25-overlay');if(oldOv)oldOv.remove();
-
-                var d=document.createElement('div');
-                d.id='loi25-banner';
-                d.setAttribute('role','dialog');
-                d.setAttribute('aria-label',CFG.lang==='fr'?'Consentement aux cookies':'Cookie consent');
-                d.setAttribute('aria-modal','false');
-
-                // ─── Style: Bar ───
-                if(CFG.style==='bar'){
-                    d.style.cssText='position:fixed;left:0;right:0;'+(CFG.position==='top'?'top:0':'bottom:0')+';z-index:999999;background:'+colors.bg+';border-'+(CFG.position==='top'?'bottom':'top')+':1px solid '+colors.border+';padding:0;color:'+colors.text+';box-shadow:0 '+(CFG.position==='top'?'2':'-2')+'px 20px rgba(0,0,0,.1);';
-                    if(CFG.animation==='slide'){
-                        d.classList.add('loi25-anim-slide','loi25-hidden-'+CFG.position);
-                    }else{
-                        d.classList.add('loi25-anim-fade','loi25-hidden-fade');
-                    }
-                }
-                // ─── Style: Popup ───
-                else if(CFG.style==='popup'){
-                    d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);z-index:999999;background:'+colors.bg+';border-radius:16px;padding:0;color:'+colors.text+';box-shadow:0 25px 60px rgba(0,0,0,.2);max-width:480px;width:calc(100% - 40px);';
-                    d.classList.add('loi25-style-popup','loi25-hidden-popup');
-                    // Overlay
-                    var overlay=document.createElement('div');
-                    overlay.id='loi25-overlay';
-                    overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:999998;background:rgba(0,0,0,.4);opacity:0;transition:opacity .35s ease;';
-                    document.body.appendChild(overlay);
-                    requestAnimationFrame(function(){overlay.style.opacity='1';});
-                }
-                // ─── Style: Corner ───
-                else if(CFG.style==='corner'){
-                    d.style.cssText='position:fixed;'+(CFG.position==='top'?'top:20px':'bottom:20px')+';right:20px;z-index:999999;background:'+colors.bg+';border-radius:16px;padding:0;color:'+colors.text+';box-shadow:0 8px 30px rgba(0,0,0,.12);max-width:380px;width:calc(100% - 40px);border:1px solid '+colors.border+';';
-                    d.classList.add('loi25-style-corner');
-                    if(CFG.animation==='slide'){
-                        d.style.transform='translateX(120%)';d.style.opacity='0';
-                        d.style.transition='transform .4s cubic-bezier(.4,0,.2,1),opacity .4s ease';
-                    }else{
-                        d.classList.add('loi25-hidden-fade');
-                        d.style.transition='opacity .5s ease';
-                    }
-                }
-
-                if(CFG.glass)d.classList.add('loi25-glass');
-
-                // ─── Inner HTML ───
-                var T=CFG.texts;
-                var inner='<div class="loi25-inner" style="padding:24px 28px;">'
-                    +'<div style="font-weight:700;font-size:17px;margin-bottom:10px;display:flex;align-items:center;gap:8px;">'
-                    +(CFG.showIcon?'<span style="font-size:22px;">🍪</span> ':'')+escHtml(T.title)+'</div>'
-                    +'<p style="margin:0 0 18px;color:'+colors.muted+';font-size:14px;line-height:1.6;">'+escHtml(T.message)+'</p>'
-                    +'<div class="loi25-btns" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">'
-                    +'<button id="loi25-yes" style="background:'+CFG.brand+';color:#fff;border:none;padding:11px 24px;border-radius:8px;font-weight:600;font-size:14px;">'+escHtml(T.accept)+'</button>'
-                    +'<button id="loi25-no" style="background:'+colors.btnBg+';color:'+colors.btnText+';border:1px solid '+colors.border+';padding:11px 24px;border-radius:8px;font-weight:600;font-size:14px;">'+escHtml(T.reject)+'</button>'
-                    +'</div>'
-                    +'<div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">'
-                    +'<a href="'+CFG.privacyUrl+'" style="color:'+colors.muted+';font-size:12px;text-decoration:underline;" target="_blank" rel="noopener">'+escHtml(T.privacy)+'</a>';
-
-                if(CFG.poweredBy){
-                    inner+='<a href="https://rayelsconsulting.com" target="_blank" rel="noopener" style="color:'+colors.muted+';font-size:11px;margin-left:auto;text-decoration:none;opacity:.6;">'+escHtml(T.powered)+' Rayels</a>';
-                }
-                inner+='</div></div>';
-
-                d.innerHTML=inner;
-                document.body.appendChild(d);
-
-                // ─── Animate in ───
-                requestAnimationFrame(function(){requestAnimationFrame(function(){
-                    if(CFG.style==='bar'){
-                        d.classList.remove('loi25-hidden-'+CFG.position,'loi25-hidden-fade');
-                    }else if(CFG.style==='popup'){
-                        d.classList.remove('loi25-hidden-popup');
-                        d.style.transform='translate(-50%,-50%) scale(1)';
-                        d.style.opacity='1';
-                    }else if(CFG.style==='corner'){
-                        d.style.transform='translateX(0)';d.style.opacity='1';
-                        d.classList.remove('loi25-hidden-fade');
-                    }
-                });});
-
-                // ─── Accept handler ───
-                function accept(level){
-                    try{
-                        localStorage.setItem(SK,level);
-                        localStorage.setItem(SD,Date.now().toString());
-                    }catch(e){}
-
-                    // Animate out
-                    if(CFG.style==='bar'){
-                        d.classList.add('loi25-hidden-'+CFG.position);
-                    }else if(CFG.style==='popup'){
-                        d.style.transform='translate(-50%,-50%) scale(.9)';d.style.opacity='0';
-                        var ov=document.getElementById('loi25-overlay');
-                        if(ov)ov.style.opacity='0';
-                    }else if(CFG.style==='corner'){
-                        d.style.transform='translateX(120%)';d.style.opacity='0';
-                    }
-
-                    setTimeout(function(){
-                        d.remove();
-                        var ov=document.getElementById('loi25-overlay');
-                        if(ov)ov.remove();
-                        showReconsent();
-                    },400);
-
-                    // Google Consent Mode update
-                    if(window.gtag){
-                        if(level==='all'){
-                            gtag('consent','update',{'ad_storage':'granted','ad_user_data':'granted','ad_personalization':'granted','analytics_storage':'granted'});
-                        }
-                    }
-
-                    // Log consent via sendBeacon (non-blocking, survives page reload)
-                    try{
-                        var fd=new FormData();
-                        fd.append('action','loi25_log_consent');
-                        fd.append('type',level);
-                        fd.append('_nonce',CFG.nonce);
-                        navigator.sendBeacon(CFG.ajaxUrl,fd);
-                    }catch(e){}
-
-                    // Load blocked scripts
-                    if(level==='all'&&CFG.hasScripts){
-                        window.location.reload();
-                    }
-                }
-
-                document.getElementById('loi25-yes').onclick=function(){accept('all');};
-                document.getElementById('loi25-no').onclick=function(){accept('necessary');};
-
-                // ─── Keyboard: Escape = Necessary Only ───
-                document.addEventListener('keydown',function handler(e){
-                    if(e.key==='Escape'){
-                        accept('necessary');
-                        document.removeEventListener('keydown',handler);
-                    }
-                });
-
-                // Focus first button for accessibility
-                setTimeout(function(){
-                    var b=document.getElementById('loi25-yes');
-                    if(b)b.focus();
-                },500);
-            }
-
-            function escHtml(s){
-                var d=document.createElement('div');d.textContent=s;return d.innerHTML;
-            }
-
-            showBanner();
-        })();
-        </script>
-        <?php
     }
 
     // ─── Dashboard Widget ───
     public function add_dashboard_widget() {
         wp_add_dashboard_widget(
-            'loi25_stats_widget',
+            'rayels_loi25_stats_widget',
             '🍪 ' . __('Loi 25 — Consent Statistics', 'loi-25-quebec'),
             array($this, 'render_dashboard_widget')
         );
@@ -468,7 +207,7 @@ class Rayels_Loi25 {
 
     public function render_dashboard_widget() {
         global $wpdb;
-        $table = esc_sql( $wpdb->prefix . 'loi25_stats' );
+        $table = esc_sql( $wpdb->prefix . 'rayels_loi25_stats' );
 
         // Check if table exists
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -477,7 +216,7 @@ class Rayels_Loi25 {
             return;
         }
 
-        $cache_key = 'loi25_stats_widget';
+        $cache_key = 'rayels_loi25_stats_widget';
         $stats     = wp_cache_get( $cache_key );
 
         if ( false === $stats ) {
@@ -540,7 +279,7 @@ class Rayels_Loi25 {
             'rayels_loi25_powered_by', 'rayels_loi25_brand_color',
             'rayels_loi25_consent_mode', 'rayels_loi25_expiry',
             'rayels_loi25_reconsent', 'rayels_loi25_animation',
-            'rayels_loi25_custom_css', 'rayels_loi25_scripts_analytics',
+            'rayels_loi25_custom_css',
             'rayels_loi25_title_fr', 'rayels_loi25_title_en',
             'rayels_loi25_message_fr', 'rayels_loi25_message_en',
             'rayels_loi25_btn_accept_fr', 'rayels_loi25_btn_accept_en',
@@ -559,14 +298,14 @@ class Rayels_Loi25 {
         }
         $this->cache_flushed = true;
         $this->flush_site_cache();
-        set_transient( 'loi25_cache_flushed', true, 30 );
+        set_transient( 'rayels_loi25_cache_flushed', true, 30 );
     }
 
     public function cache_flush_notice() {
-        if ( ! get_transient( 'loi25_cache_flushed' ) ) {
+        if ( ! get_transient( 'rayels_loi25_cache_flushed' ) ) {
             return;
         }
-        delete_transient( 'loi25_cache_flushed' );
+        delete_transient( 'rayels_loi25_cache_flushed' );
         ?>
         <div class="notice notice-success is-dismissible">
             <p><strong>Loi 25:</strong> Settings saved. Site cache has been automatically cleared — your changes are live now.</p>
@@ -633,39 +372,15 @@ class Rayels_Loi25 {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tab display only, no data processing
         $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general';
         ?>
-        <style>
-            .loi25-admin{max-width:900px;}
-            .loi25-admin h1{display:flex;align-items:center;gap:10px;font-size:24px;}
-            .loi25-admin .loi25-badge{background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff;font-size:11px;padding:3px 10px;border-radius:99px;font-weight:500;}
-            .loi25-tabs{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin:20px 0 0;}
-            .loi25-tab{padding:10px 20px;cursor:pointer;color:#64748b;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;text-decoration:none;font-size:14px;transition:all .15s;}
-            .loi25-tab:hover{color:#1d4ed8;}
-            .loi25-tab.active{color:#1d4ed8;border-bottom-color:#1d4ed8;font-weight:600;}
-            .loi25-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-top:20px;}
-            .loi25-card h2{font-size:17px;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
-            .loi25-card p.desc{color:#64748b;font-size:13px;margin:0 0 20px;}
-            .loi25-field{margin-bottom:20px;}
-            .loi25-field label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#334155;}
-            .loi25-field .hint{font-size:12px;color:#94a3b8;margin-top:4px;}
-            .loi25-field input[type="text"],.loi25-field textarea,.loi25-field select{width:100%;max-width:500px;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;transition:border-color .15s;}
-            .loi25-field input[type="text"]:focus,.loi25-field textarea:focus,.loi25-field select:focus{border-color:#1d4ed8;outline:none;box-shadow:0 0 0 3px rgba(29,78,216,.1);}
-            .loi25-field textarea{min-height:100px;font-family:monospace;font-size:13px;}
-            .loi25-field input[type="color"]{width:50px;height:36px;border:1px solid #d1d5db;border-radius:8px;padding:2px;cursor:pointer;}
-            .loi25-field input[type="number"]{width:100px;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;}
-            .loi25-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-            @media(max-width:782px){.loi25-row{grid-template-columns:1fr;}}
-            .loi25-footer{margin-top:24px;padding:16px 0;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;text-align:center;}
-        </style>
 
         <div class="wrap loi25-admin">
             <h1>🍪 Loi 25 Cookie Consent <span class="loi25-badge">v<?php echo esc_html( $this->version ); ?></span></h1>
-            <p>The most complete <strong>100% free</strong> Loi 25 compliance solution. By <a href="https://rayelsconsulting.com" target="_blank" style="color:#1d4ed8;text-decoration:none;font-weight:500;">Rayels Consulting</a></p>
+            <p>Loi 25 cookie consent compliance for Quebec. By <a href="https://rayelsconsulting.com" target="_blank" style="color:#1d4ed8;text-decoration:none;font-weight:500;">Rayels Consulting</a></p>
 
             <div class="loi25-tabs">
                 <a href="?page=rayels-loi25&tab=general" class="loi25-tab <?php echo $active_tab === 'general' ? 'active' : ''; ?>">⚙️ General</a>
                 <a href="?page=rayels-loi25&tab=appearance" class="loi25-tab <?php echo $active_tab === 'appearance' ? 'active' : ''; ?>">🎨 Appearance</a>
                 <a href="?page=rayels-loi25&tab=text" class="loi25-tab <?php echo $active_tab === 'text' ? 'active' : ''; ?>">✍️ Custom Text</a>
-                <a href="?page=rayels-loi25&tab=scripts" class="loi25-tab <?php echo $active_tab === 'scripts' ? 'active' : ''; ?>">🛡️ Script Vault</a>
                 <a href="?page=rayels-loi25&tab=advanced" class="loi25-tab <?php echo $active_tab === 'advanced' ? 'active' : ''; ?>">🔧 Advanced</a>
             </div>
 
@@ -783,8 +498,8 @@ class Rayels_Loi25 {
                     <div class="loi25-field">
                         <label>"Powered by Rayels" link</label>
                         <select name="rayels_loi25_powered_by">
-                            <option value="1" <?php selected(get_option('rayels_loi25_powered_by','1'),'1'); ?>>Show (Recommended ❤️)</option>
-                            <option value="0" <?php selected(get_option('rayels_loi25_powered_by','1'),'0'); ?>>Hide</option>
+                            <option value="1" <?php selected(get_option('rayels_loi25_powered_by','0'),'1'); ?>>Show</option>
+                            <option value="0" <?php selected(get_option('rayels_loi25_powered_by','0'),'0'); ?>>Hide</option>
                         </select>
                         <div class="hint">Help us grow by keeping the credit link visible!</div>
                     </div>
@@ -836,23 +551,6 @@ class Rayels_Loi25 {
                             <label>Reject Button</label>
                             <input type="text" name="rayels_loi25_btn_reject_en" value="<?php echo esc_attr(get_option('rayels_loi25_btn_reject_en','')); ?>" placeholder="Necessary Only" />
                         </div>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <?php if ($active_tab === 'scripts'): ?>
-                <div class="loi25-card">
-                    <h2>🛡️ Script Vault — Auto-block Tracking Scripts</h2>
-                    <p class="desc">Paste your tracking scripts below. They will <strong>only load after the user clicks "Accept All"</strong>. This is the easiest way to be 100% compliant with Loi 25.</p>
-
-                    <div class="loi25-field">
-                        <label>Analytics / Tracking Scripts</label>
-                        <textarea name="rayels_loi25_scripts_analytics" rows="10" placeholder="<!-- Paste your Google Analytics, Meta Pixel, or any tracking code here -->"><?php echo esc_textarea(get_option('rayels_loi25_scripts_analytics','')); ?></textarea>
-                        <div class="hint">Supports Google Analytics, Google Tag Manager, Meta Pixel, Hotjar, etc. The scripts will be injected into &lt;head&gt; only after consent is granted.</div>
-                    </div>
-
-                    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:14px 18px;font-size:13px;color:#92400e;">
-                        ⚠️ <strong>Important:</strong> Remove these tracking scripts from your theme or other plugins to avoid duplicate loading. This vault replaces them.
                     </div>
                 </div>
                 <?php endif; ?>

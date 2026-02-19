@@ -1,0 +1,153 @@
+/* Loi 25 Quebec Cookie Consent - Admin Styles */
+
+.loi25-admin {
+    max-width: 900px;
+}
+
+.loi25-admin h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+}
+
+.loi25-admin .loi25-badge {
+    background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-weight: 500;
+}
+
+.loi25-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #e2e8f0;
+    margin: 20px 0 0;
+}
+
+.loi25-tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: #64748b;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all .15s;
+}
+
+.loi25-tab:hover {
+    color: #1d4ed8;
+}
+
+.loi25-tab.active {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+    font-weight: 600;
+}
+
+.loi25-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 20px;
+}
+
+.loi25-card h2 {
+    font-size: 17px;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loi25-card p.desc {
+    color: #64748b;
+    font-size: 13px;
+    margin: 0 0 20px;
+}
+
+.loi25-field {
+    margin-bottom: 20px;
+}
+
+.loi25-field label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #334155;
+}
+
+.loi25-field .hint {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.loi25-field input[type="text"],
+.loi25-field textarea,
+.loi25-field select {
+    width: 100%;
+    max-width: 500px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color .15s;
+}
+
+.loi25-field input[type="text"]:focus,
+.loi25-field textarea:focus,
+.loi25-field select:focus {
+    border-color: #1d4ed8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, .1);
+}
+
+.loi25-field textarea {
+    min-height: 100px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.loi25-field input[type="color"] {
+    width: 50px;
+    height: 36px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 2px;
+    cursor: pointer;
+}
+
+.loi25-field input[type="number"] {
+    width: 100px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+}
+
+.loi25-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media(max-width:782px) {
+    .loi25-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.loi25-footer {
+    margin-top: 24px;
+    padding: 16px 0;
+    border-top: 1px solid #e2e8f0;
+    font-size: 12px;
+    color: #94a3b8;
+    text-align: center;
+}
