@@ -1,6 +1,6 @@
 === Loi 25 Quebec ===
 Contributors: rayelsconsulting
-Tags: loi 25, quebec, cookie consent, privacy, law 25
+Tags: law 25, quebec, cookie consent, privacy, cookies
 Requires at least: 5.0
 Tested up to: 6.9
 Stable tag: 2.0.1
@@ -8,7 +8,7 @@ Requires PHP: 7.4
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
-Loi 25 (Bill 64) cookie consent for Quebec. Google Consent Mode v2, 3 styles, bilingual.
+Quebec Law 25 (Bill 64) cookie consent banner. Google Consent Mode v2, 3 styles, bilingual.
 
 == Description ==
 
